@@ -1,23 +1,12 @@
 import pickle
 import numpy as np
 import speech_recognition
-import warnings
 
 from os import listdir
 from os.path import isfile, join, basename, splitext
 from pydub import AudioSegment
 from scipy.io.wavfile import read
 from FeatureExtractor import FeatureExtractor
-
-# warnings.filterwarnings("ignore")
-
-# path to training data
-ABPATH = "D:/Python/SpeakerDiarization/"
-source1 = ABPATH + "SampleData/Pre/"
-source2 = ABPATH + "SampleData/"
-
-# path where training self.speakers will be saved
-modelpath = ABPATH + "Speakers_models/"
 
 
 class SpeakerRecognition:
@@ -32,6 +21,7 @@ class SpeakerRecognition:
         self.result_dir = ""
         self.file_path = ""
         self.file_name = ""
+        self.new_path_format = ""
 
         self.is_fail = False
 
@@ -182,16 +172,17 @@ class SpeakerRecognition:
                 sep = sound[prev:position]
                 prev = position
                 # writing wav files is a one liner
-                new_path = join(self.result_dir, (self.file_name + str(i) + ".wav"))
-                sep.export(new_path, format="wav")
+                self.new_path_format = join(
+                    self.result_dir, (self.file_name + "_" + "{index}" + ".wav")
+                )
+                sep.export(self.new_path_format.format(index=i), format="wav")
 
     def speechToText(self):
         for i, _ in enumerate(self.predicts):
             r = speech_recognition.Recognizer()
             if self.predicts.__len__() != 1:
-                new_path = self.file_name + str(i) + ".wav"
                 with speech_recognition.WavFile(
-                    new_path
+                    self.new_path_format.format(index=i)
                 ) as source:  # use "test.wav" as the audio source
                     audio_stt = r.record(source)  # extract audio data from the file
             else:
@@ -224,11 +215,12 @@ class SpeakerRecognition:
     def saveResult(self):
         ##### Save result.txt #####
         data = ""
-        f = open(join(self.result_dir, ("result_" + self.file_name + ".txt")), "w")
-        for i, _ in enumerate(self.predicts):
-            data += "%s, %s\n" % (self.predicts[i], self.scripts[i])
-        f.write(data)
-        f.close()
+        with open(
+            join(self.result_dir, ("result_" + self.file_name + ".txt")), "w"
+        ) as f:
+            for i, _ in enumerate(self.predicts):
+                data += "%s, %s\n" % (self.predicts[i], self.scripts[i])
+            f.write(data)
 
 
 if __name__ == "__main__":
@@ -236,6 +228,6 @@ if __name__ == "__main__":
     SR.recognition(
         participants_path="./participants.txt",
         model_dir="./models",
-        file_path="./test_data/108_9_2.wav",
+        file_path="./test_data/110_2_2.wav",
         result_dir="./results",
     )
