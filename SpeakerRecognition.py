@@ -16,7 +16,7 @@ class SpeakerRecognition:
         self.models = []
         self.participants = []
         self.predicts = []
-        self.ends = []
+        self.ends = []  # The end of each speaker's speech
 
         self.result_dir = ""
         self.file_path = ""
@@ -73,12 +73,11 @@ class SpeakerRecognition:
         self.saveResult()
 
     def diarization(self):
-        ##### Diarization #####
         winLen = 150
         winStep = 10
-        startLen = 100
-        lastLen = 100
-        frame = 50
+        startLen = 100  # The first n vectors are ignored.
+        lastLen = 100  # The end n vectors are ignored.
+
         winners = []
         log_likelihood = np.zeros(len(self.models))
         ##### Scoring #####
@@ -120,29 +119,26 @@ class SpeakerRecognition:
             winners.append((0, np.argmax(log_likelihood)))
             print("\tdetected as - ", self.participants[winners[0][1]])
         ##### End Scoring #####
+
         predicts_tmp = []
         ends_tmp = []
         cnt = 0
-        # boundary = round(self.vector.__len__()/winStep * (0.2))
-        # if boundary>=20: boundary = 20
         boundary = 15
-        tmp = winners[0][1]
-        if not winners.__len__() == 1:
+
+        tmp = winners[0][1]  # first winner
+        if winners.__len__() > 1:
             for fr, win in winners:
                 if tmp != win and cnt >= boundary:
-                    ends_tmp.append(fr + winLen // 2)
+                    ends_tmp.append(fr + winLen - boundary * 2)
                     predicts_tmp.append(self.participants[tmp])
                 if tmp != win:
                     cnt = 0
                     tmp = win
-                    continue
                 cnt += 1
-            if cnt >= boundary:
+            if cnt >= boundary or predicts_tmp.__len__() == 0:
                 predicts_tmp.append(self.participants[tmp])
                 ends_tmp.append(self.vector.__len__() - 1)
-            elif winners.__len__() <= boundary or predicts_tmp.__len__() == 0:
-                predicts_tmp.append(self.participants[tmp])
-                ends_tmp.append(self.vector.__len__() - 1)
+
             ends_tmp[-1] = self.vector.__len__() - 1
             prepredict = ""
             preend = 0
@@ -228,6 +224,6 @@ if __name__ == "__main__":
     SR.recognition(
         participants_path="./participants.txt",
         model_dir="./models",
-        file_path="./test_data/110_2_2.wav",
+        file_path="./test_data/109_2_108_1.wav",
         result_dir="./results",
     )
