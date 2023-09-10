@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 SampleData/
+results/
 train_data/other/
 result*.txt
 *.gmm
